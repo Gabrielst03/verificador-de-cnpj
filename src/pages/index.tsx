@@ -1,117 +1,97 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
+import { Inter } from 'next/font/google';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { fetchCnpj } from '@/hooks/fetchCnpj';
+import { BadgeCheck, GithubIcon } from 'lucide-react';
 
-const inter = Inter({ subsets: ['latin'] })
+import { ToastContainer, toast } from 'react-toastify';
+import Link from 'next/link';
+
+
+const inter = Inter({ subsets: ['latin'] });
+
+interface IEmpresa {
+  razao_social: string;
+  cnpj: string;
+  qsa: Array<{ nome_socio: string }>;
+  logradouro: string;
+  municipio: string;
+  uf: string;
+  natureza_juridica: string;
+  cnae_fiscal_descricao: string;
+  data_inicio_atividade: string;
+}
 
 export default function Home() {
+  const [cnpj, setCnpj] = useState<string>('');
+  const [empresa, setEmpresa] = useState<IEmpresa | undefined>();
+
+
+  function removeSpecialCharacters(cnpj: string): string {
+    // Expressão regular para remover todos os caracteres especiais do CNPJ
+    // Ex: Isso 47.960.950/0001-21 se torna isso === 47960950000121
+    return cnpj.replace(/[^\d]/g, '');
+  }
+
+  const findCnpj = async () => {
+    try {
+      const cnpjWithoutSpecialChars = removeSpecialCharacters(cnpj);
+
+      const data = await fetchCnpj(cnpjWithoutSpecialChars);
+
+      toast.success('CNPJ Encontrado!')
+
+      setEmpresa(data);
+    } catch (error) {
+      toast.error('CNPJ Não encontado!')
+    }
+  }
+
+
+
+
   return (
     <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+      className={`flex min-h-screen flex-col w-full items-center mt-12 ${inter.className}`}
     >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+      <ToastContainer theme='dark' />
+      <div className='flex flex-col items-center w-[800px]'>
+        <h1 className='text-2xl'>Verificar<strong className='text-violet-500'>Empresa</strong></h1>
+        <p className='text-sm text-gray-300'>Confira se uma empresa existe informando o número de CNPJ.</p>
+        <div className="flex flex-col gap-2 mt-12">
+          <Label>CNPJ da Empresa</Label>
+          <Input value={cnpj} onChange={(e) => setCnpj(e.target.value)} className='w-[400px] rounded' type='text' placeholder='Digite o CNPJ...' />
+          <Button onClick={findCnpj} className='rounded'>Buscar</Button>
         </div>
-      </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+        {empresa && <div className="flex flex-col gap-1 mt-12 w-full bg-white/5 p-4 rounded text-white">
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+          <p>Razão Social: <span className='text-violet-500 font-semibold'>{empresa?.razao_social}</span></p>
+          <p>CNPJ: <span className='text-violet-500 font-semibold'>{empresa?.cnpj}</span></p>
+          <p>Sócio(a): <span className='text-violet-500 font-semibold'>{empresa?.qsa[0]?.nome_socio}</span></p>
+          <p>Sócio(a): <span className='text-violet-500 font-semibold'>{empresa?.qsa[1]?.nome_socio}</span></p>
+          <p>Sócio(a): <span className='text-violet-500 font-semibold'>{empresa?.qsa[2]?.nome_socio}</span></p>
+          <p>Logradouro: <span className='text-violet-500 font-semibold'>{empresa?.logradouro}</span></p>
+          <p>Cidade: <span className='text-violet-500 font-semibold'>{empresa?.municipio} - {empresa?.uf}</span></p>
+          <p>Natureza Jurídica: <span className='text-violet-500 font-semibold'>{empresa?.natureza_juridica}</span></p>
+          <p>Descrição Fiscal: <span className='text-violet-500 font-semibold'>{empresa?.cnae_fiscal_descricao}</span></p>
+          <p>Início das Atividades: <span className='text-violet-500 font-semibold'>{empresa?.data_inicio_atividade}</span></p>
+        </div>}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        {empresa && <div className='flex items-center gap-2 mt-10 text-green-500'>
+          <BadgeCheck className='text-green-500' /> Empresa Regularizada!
+        </div>}
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
+        <Link href='https://github.com/gabrielst03' target='_blank' className='flex flex-col items-center gap-1 mt-20  '>
+          <div className='w-12 h-12 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 duration-300 text-white'>
+            <GithubIcon className='w-8 h-8' />
+          </div>
+          Gabriel Santana
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+
+        </Link>
       </div>
     </main>
   )
